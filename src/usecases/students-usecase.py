@@ -1,49 +1,11 @@
 # Application Layer: Student Use Cases
 #
-# This module defines the Repository interface (port) and all
-# use cases related to the Student entity. Use cases orchestrate
-# domain logic without depending on any framework, database, or
-# external tool — they only depend on the domain entities and
-# the repository abstraction defined here.
-
-from abc import ABC, abstractmethod
-from typing import Optional
-from domain.student import Student, InvalidStudentError
+# This module defines all use cases related to the Student entity.
 
 
-# ================================================================
-# REPOSITORY INTERFACE (Port)
-# ================================================================
 
-class StudentRepository(ABC):
-    """
-    Abstract interface for Student persistence.
-
-    This is a port in Clean Architecture terms. The actual
-    implementation (InMemoryStudentRepository, DjangoStudentRepository,
-    etc.) lives in the outer layer and is injected at runtime.
-    The use cases never know which implementation is being used.
-    """
-
-    @abstractmethod
-    def save(self, student: Student) -> None:
-        """Persist a new student or update an existing one."""
-        pass
-
-    @abstractmethod
-    def find_by_id(self, student_id: str) -> Optional[Student]:
-        """Return a Student by its id, or None if not found."""
-        pass
-
-    @abstractmethod
-    def find_by_matricule(self, matricule: str) -> Optional[Student]:
-        """Return a Student by its matricule, or None if not found."""
-        pass
-
-    @abstractmethod
-    def exists(self, student_id: str) -> bool:
-        """Return True if a student with the given id already exists."""
-        pass
+from entities.students import Student
+from repositories.student_repository import StudentRepository
 
 
 # ================================================================
@@ -103,8 +65,8 @@ class GetStudent:
     """
     Use case: retrieve a student by their id.
 
-    This use case is a simple query — it carries no side effects
-    and enforces no business rule beyond existence checking.
+    Simple query use case — no side effects, no business rules
+    beyond existence checking.
     """
 
     def __init__(self, repository: StudentRepository):
@@ -130,55 +92,3 @@ class GetStudent:
             raise ValueError(f"No student found with id '{student_id}'.")
 
         return student
-
-
-# ================================================================
-# IN-MEMORY IMPLEMENTATION (for testing / manual verification)
-# ================================================================
-
-class InMemoryStudentRepository(StudentRepository):
-    """
-    Simple in-memory implementation of StudentRepository.
-
-    Used for unit testing and manual verification only.
-    In a real project, this would be replaced by a Django ORM
-    or any other persistence adapter in the outer layer.
-    """
-
-    def __init__(self):
-        self._store: dict[str, Student] = {}
-
-    def save(self, student: Student) -> None:
-        self._store[student.id] = student
-
-    def find_by_id(self, student_id: str) -> Optional[Student]:
-        return self._store.get(student_id)
-
-    def find_by_matricule(self, matricule: str) -> Optional[Student]:
-        for student in self._store.values():
-            if student.has_matricule(matricule):
-                return student
-        return None
-
-    def exists(self, student_id: str) -> bool:
-        return student_id in self._store
-
-
-# ================================================================
-# Usage example
-# ================================================================
-
-repo = InMemoryStudentRepository()
-create = CreateStudent(repo)
-get    = GetStudent(repo)
-
-student = create.execute(
-    student_id="202504039",
-    matricule="MAT141",
-    name="Kenson Janvier"
-)
-
-print(student.full_name())   # Kenson Janvier
-
-found = get.execute("202504039")
-print(found.matricule)       # MAT141

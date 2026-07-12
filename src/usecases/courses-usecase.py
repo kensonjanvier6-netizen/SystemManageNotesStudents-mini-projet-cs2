@@ -1,40 +1,9 @@
 # Application Layer: Course Use Cases
-#
-# This module defines the Repository interface (port) and all
-# use cases related to the Course entity.
-
-from abc import ABC, abstractmethod
-from typing import Optional
-from domain.course import Course, InvalidCourseError
 
 
-# ================================================================
-# REPOSITORY INTERFACE (Port)
-# ================================================================
 
-class CourseRepository(ABC):
-    """
-    Abstract interface for Course persistence.
-
-    The actual implementation lives in the outer layer and is
-    injected at runtime. Use cases never depend on a concrete
-    persistence mechanism.
-    """
-
-    @abstractmethod
-    def save(self, course: Course) -> None:
-        """Persist a new course or update an existing one."""
-        pass
-
-    @abstractmethod
-    def find_by_id(self, course_id: str) -> Optional[Course]:
-        """Return a Course by its id, or None if not found."""
-        pass
-
-    @abstractmethod
-    def exists(self, course_id: str) -> bool:
-        """Return True if a course with the given id already exists."""
-        pass
+from entities.courses import Course
+from repositories.course_repository import CourseRepository
 
 
 # ================================================================
@@ -116,42 +85,3 @@ class GetCourse:
             raise ValueError(f"No course found with id '{course_id}'.")
 
         return course
-
-
-# ================================================================
-# IN-MEMORY IMPLEMENTATION (for testing / manual verification)
-# ================================================================
-
-class InMemoryCourseRepository(CourseRepository):
-    """
-    Simple in-memory implementation of CourseRepository.
-    """
-
-    def __init__(self):
-        self._store: dict[str, Course] = {}
-
-    def save(self, course: Course) -> None:
-        self._store[course.id] = course
-
-    def find_by_id(self, course_id: str) -> Optional[Course]:
-        return self._store.get(course_id)
-
-    def exists(self, course_id: str) -> bool:
-        return course_id in self._store
-
-
-# ================================================================
-# Usage example
-# ================================================================
-
-repo   = InMemoryCourseRepository()
-create = CreateCourse(repo)
-get    = GetCourse(repo)
-
-course = create.execute(course_id="C1", name="Mathematiques", credits=7)
-
-print(course.name)          # Mathematiques
-print(course.credits)       # 7
-
-found = get.execute("C1")
-print(found.has_id("C1"))   # True

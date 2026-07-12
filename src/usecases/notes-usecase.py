@@ -1,44 +1,14 @@
 # Application Layer: Note Use Cases
 #
-# This module defines the Repository interface (port) and all
-# use cases related to the Note entity, including grade assignment,
-# retrieval, and GPA computation.
-
-from abc import ABC, abstractmethod
-from typing import Optional
-from domain.note import Note, InvalidNoteError
-from use_cases.student_use_cases import StudentRepository
-from use_cases.course_use_cases import CourseRepository
+# This module defines all use cases related to the Note entity.
+# It imports all repositories from the repositories layer —
+# it does NOT define them here.
 
 
-# ================================================================
-# REPOSITORY INTERFACE (Port)
-# ================================================================
-
-class NoteRepository(ABC):
-    """
-    Abstract interface for Note persistence.
-    """
-
-    @abstractmethod
-    def save(self, note: Note) -> None:
-        """Persist a new note or update an existing one."""
-        pass
-
-    @abstractmethod
-    def find_by_id(self, note_id: str) -> Optional[Note]:
-        """Return a Note by its id, or None if not found."""
-        pass
-
-    @abstractmethod
-    def find_by_student(self, student_id: str) -> list[Note]:
-        """Return all notes belonging to a given student."""
-        pass
-
-    @abstractmethod
-    def exists(self, note_id: str) -> bool:
-        """Return True if a note with the given id already exists."""
-        pass
+from entities.notes import Note
+from repositories.notes_repository import NoteRepository
+from repositories.students_repository import StudentRepository
+from repositories.courses_repository import CourseRepository
 
 
 # ================================================================
@@ -88,7 +58,7 @@ class AssignNote:
         Raises:
             ValueError: if student or course does not exist,
                         or if a note with the same id already exists.
-            InvalidNoteError: if the value is outside 0–100.
+            InvalidNoteError: if the value is outside 0-100.
         """
 
         # Rule 1: the student must exist
@@ -202,59 +172,3 @@ class ComputeGPA:
 
         total = sum(note.value for note in notes)
         return round(total / len(notes), 2)
-
-
-# ================================================================
-# IN-MEMORY IMPLEMENTATION (for testing / manual verification)
-# ================================================================
-
-class InMemoryNoteRepository(NoteRepository):
-    """
-    Simple in-memory implementation of NoteRepository.
-    """
-
-    def __init__(self):
-        self._store: dict[str, Note] = {}
-
-    def save(self, note: Note) -> None:
-        self._store[note.id] = note
-
-    def find_by_id(self, note_id: str) -> Optional[Note]:
-        return self._store.get(note_id)
-
-    def find_by_student(self, student_id: str) -> list[Note]:
-        return [n for n in self._store.values() if n.belongs_to_student(student_id)]
-
-    def exists(self, note_id: str) -> bool:
-        return note_id in self._store
-
-
-# ================================================================
-# Usage example
-# ================================================================
-from use_cases.student_use_cases import InMemoryStudentRepository, CreateStudent
-from use_cases.course_use_cases  import InMemoryCourseRepository,  CreateCourse
-
-student_repo = InMemoryStudentRepository()
-course_repo  = InMemoryCourseRepository()
-note_repo    = InMemoryNoteRepository()
-
-# Setup
-CreateStudent(student_repo).execute("202504039", "MAT141", "Kenson Janvier")
-CreateCourse(course_repo).execute("C1", "Mathematiques", 7)
-CreateCourse(course_repo).execute("C2", "Algorithmique", 5)
-
-# Assign notes
-assign = AssignNote(note_repo, student_repo, course_repo)
-assign.execute("N1", "202504039", "C1", 85)
-assign.execute("N2", "202504039", "C2", 72)
-assign.execute("N3", "202504039", "C1", 45)
-
-# Get all notes
-notes = GetStudentNotes(note_repo, student_repo).execute("202504039")
-for note in notes:
-    print(f"Course: {note.course_id} | Value: {note.value} | Mention: {note.mention()}")
-
-# Compute GPA
-gpa = ComputeGPA(note_repo, student_repo).execute("202504039")
-print(f"GPA: {gpa}")   # (85 + 72 + 45) / 3 = 67.33
