@@ -91,7 +91,7 @@ print("=" * 50)
 print("   System manage note students")
 print("=" * 50)
 
-# step 1 — Kreye etidyan
+# step 1
 student = create_student.execute(
     student_id="202504039",
     matricule="MAT141",
@@ -101,7 +101,7 @@ print(f"\n✅ student  : {student.full_name()}")
 print(f"   ID            : {student.id}")
 print(f"   Matricule     : {student.matricule}")
 
-# step 2 — Kreye kou
+# step 2 
 course = create_course.execute(
     course_id="C1",
     name="Algorithmique",
@@ -111,7 +111,7 @@ print(f"\n✅ course      : {course.name}")
 print(f"   ID            : {course.id}")
 print(f"   course credits      : {course.credits}")
 
-# step 3 — Asiye nòt
+# step 3 
 note = assign_note.execute(
     note_id="N1",
     student_id="202504039",
@@ -122,7 +122,7 @@ print(f"\n✅ Note     : {note.value} / 100")
 print(f"   Mention       : {note.mention()}")
 print(f"   succes          : {'passing' if note.is_passing() else 'failure'}")
 
-# step 4 — Wè tout nòt etidyan an
+# step 4 
 print(f"\n📋 student Note {student.full_name()} :")
 print("-" * 50)
 notes = get_student_notes.execute("202504039")
